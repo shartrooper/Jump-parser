@@ -3,19 +3,111 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,shrink-to-fit=no">
-  <meta name="description" content="Parse jumper params">
-  <title>Jumper data entry parser</title>
+  <meta name="description" content="Parse jumper token">
+  <title>QoL Jumper data entry parser</title>
 </head>
 <body>
-	<h3>Introduce número de la encuesta y params del jumper<h3>
+	<h3>Introduce número de la encuesta y token del jumper</h3>
+	<ul>
+		<li>Introducir el N. de identificación de la encuesta es requerido</li>
+		<li>Si se deja la entrada de formulario para el Project token vacío, será creado como 'ktrmr/token no especificado' automáticamente</li>
+		<li>Puedes pegar el token copiado directamente de params, siempre y cuando esté completo, sin importar que también, como ocurre en ocasiones, se termine copiando el atributo 'ProjectToken'</li>
+	</ul>
 	<label for="name">N. Encuesta:</label>
-	<input type="text" id="num" name="num" required>
-	</br>
-	<label for="name">Cadena de carácteres params:</label>
-	<input type="text" id="params" name="params" required>
-	</br>
-	<button id="save_button" >Guardar</button>
-	<div id="jumpers_displayer">
-	</div>
+	<br/>
+	<input class="surveyForm" type="text" id="num" name="num" maxlength="6">
+	<br>
+	<label for="name">Project token:</label>
+	<br/>
+	<input class="surveyForm" type="text" id="params" name="params">
+	<br/>
+	<label for="name">Nota adicional:</label>
+	<br/>
+	<input class="surveyForm" type="text" id="notes" name="notes">
+	<button id="save_button" >Crear</button>
+	<div id="jumpers_displayer">Tabla de jumpers</div>
+	<table id="jumper_table">
+	<tr>
+		<th style="background-color: green">Nº Encuesta</th>
+		<th style="background-color: yellow">Html+Token</th>
+		<th style="background-color: blue">Notas adicionales</th>
+	</tr>
+	</table>
 </body>
+<script>
+let jumpers=[],counter= 0;
+const FunBun= ()=>
+{
+	const validateString= (str,regex,message)=> 
+	{
+		if(!regex.test(str))
+		{
+			invalidDataEntry(message);
+			return false;
+		}
+		return true;
+		
+	}
+	const jumperCreator= (strA,strB,strC)=>
+	{
+		if(validateString(strA,/[0-9]{6}/,'Número ID de encuesta inválido o no especificado') && (!strB || validateString(strB,/[\w]{8}-[\w]{4}-[\w]{4}-[\w]{4}-[\w]{12}/gi,'No hay coincidencias, el token no tiene el formato requerido')))
+		{
+			jumpers.push({name: strA,token: strB?`https://s.cint.com/Survey/Complete?ProjectToken=${strB.match(/[\w]{8}-[\w]{4}-[\w]{4}-[\w]{4}-[\w]{12}/gi).join('')}`:'ktrmr/ token no especificado' ,notes: strC, key: counter});
+			mapJumpersinTable(jumpers[counter]);
+			counter++;
+		}
+	}
+	const invalidDataEntry=(str)=>
+	{
+		alert(str);
+		formsCleaner();
+	}
+	const getFormsValue= ()=>
+	{
+		document.querySelector('button').addEventListener('click', (event) => {
+			let valArray=[];
+			let ele=document.getElementsByClassName("surveyForm");
+			for(let i=0; i<ele.length; i++)
+			{
+				valArray.push(ele[i]['value']);
+			}
+			jumperCreator(...valArray);
+			formsCleaner();
+		});
+	}
+	const formsCleaner= () =>
+	{
+			let ele=document.getElementsByClassName("surveyForm");
+			for(let i=0; i<ele.length; i++)
+			{
+				ele[i]['value']='';
+			}
+	}
+	const mapJumpersinTable=(jumper)=>
+	{
+		let table= document.getElementById('jumper_table');
+		let tr= document.createElement('TR');
+		let keysArr=Object.keys(jumper);
+		table.appendChild(tr);
+		for(let i=0; i<keysArr.length-1; i++)
+		{
+			let td= document.createElement('TD');
+			let t= document.createTextNode(jumper[keysArr[i]]);
+			td.appendChild(t);
+			tr.appendChild(td);
+		}
+	}
+	return {
+		validateString: validateString,
+		jumperCreator: jumperCreator,
+		invalidDataEntry: invalidDataEntry,
+		getFormsValue: getFormsValue,
+		formsCleaner: formsCleaner,
+		mapJumpersinTable: mapJumpersinTable
+	}
+}
+
+FunBun().getFormsValue();
+
+</script>
 </html>
