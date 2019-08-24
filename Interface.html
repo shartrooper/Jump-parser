@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,shrink-to-fit=no">
+  <meta name="description" content="Parse jumper token">
+  <title>QoL Jumper data entry parser</title>
+  <style type="text/css">
+	body button
+	{
+		font-family: Georgia, serif;
+		font-size: 16px;
+		letter-spacing: 2px;
+		word-spacing: 2px;
+		color: #000000;
+		font-weight: 400;
+		text-decoration: none solid rgb(68, 68, 68);
+		font-style: normal;
+	}
+	h3
+	{
+		text-align: center;
+	}
+	.surveyForm
+	{
+		width: 50%;
+	}
+	#num
+	{
+		width: 10%;
+	}
+	button
+	{
+		margin: 10px;
+	}
+	
+	table
+	{
+		margin: 0 auto;
+		color: white;
+		font-size: 18px;
+	}
+	
+	td:hover
+	{
+		cursor: pointer;
+		background-color: #8ac6d1;
+	}
+  </style>
+</head>
+<body>
+	<header>
+		<h3>Introduce número de la encuesta y token del jumper</h3>
+		<ul>
+			<li>Introducir el N. de identificación de la encuesta es requerido</li>
+			<li>Si se deja la entrada de formulario para el Project token vacío, será creado como 'ktrmr/token no especificado' automáticamente</li>
+			<li>Puedes pegar el token copiado directamente de params, siempre y cuando esté completo, sin importar que también, como ocurre en ocasiones, se termine copiando el atributo 'ProjectToken'</li>
+		</ul>
+	</header>
+	<label for="name">N. Encuesta:</label>
+	<br/>
+	<input class="surveyForm" type="text" id="num" name="num" maxlength="6">
+	<br>
+	<label for="name">Project token:</label>
+	<br/>
+	<input class="surveyForm" type="text" id="params" name="params">
+	<br/>
+	<label for="name">Nota adicional:</label>
+	<br/>
+	<input class="surveyForm" type="text" id="notes" name="notes">
+	<br/>
+	<button id="save_button" >Crear</button>
+	<h3 id="jumpers_displayer">Tabla de jumpers</h3>
+	<ul>
+		<li>Hacer click sobre cualquier data contenida en la tabla es copiada automáticamente en el portapapeles.</li>
+	</ul>
+	<table id="jumper_table">
+	<colgroup>
+		<col style="background-color: #ffba92">
+		<col style="background-color: #ff8080">
+		<col style="background-color: #83b582">
+	</colgroup>
+	<tr>
+		<th >Nº Encuesta</th>
+		<th >Html+Token</th>
+		<th >Notas adicionales</th>
+	</tr>
+	</table>
+</body>
+<script>
+let jumpers=[],counter= 0;
+const FunBun= ()=>
+{
+	const validateString= (str,regex,message)=> 
+	{
+		if(!regex.test(str))
+		{
+			invalidDataEntry(message);
+			return false;
+		}
+		return true;
+		
+	}
+	const jumperCreator= (strA,strB,strC)=>
+	{
+		if(validateString(strA,/[0-9]{6}/,'Número ID de encuesta inválido o no especificado') && (!strB || validateString(strB,/[\w]{8}-[\w]{4}-[\w]{4}-[\w]{4}-[\w]{12}/gi,'No hay coincidencias, el token no tiene el formato requerido')))
+		{
+			jumpers.push({name: strA,token: strB?`https://s.cint.com/Survey/Complete?ProjectToken=${strB.match(/[\w]{8}-[\w]{4}-[\w]{4}-[\w]{4}-[\w]{12}/gi).join('')}`:'ktrmr/ token no especificado' ,notes: strC, key: counter});
+			mapJumpersinTable(jumpers[counter]);
+			counter++;
+		}
+	}
+	const invalidDataEntry=(str)=>
+	{
+		alert(str);
+		formsCleaner();
+	}
+	const getFormsValue= ()=>
+	{
+		document.querySelector('button').addEventListener('click', (event) => {
+			let valArray=[];
+			let ele=document.getElementsByClassName("surveyForm");
+			for(let i=0; i<ele.length; i++)
+			{
+				valArray.push(ele[i]['value']);
+			}
+			jumperCreator(...valArray);
+			formsCleaner();
+		});
+	}
+	const formsCleaner= () =>
+	{
+			let ele=document.getElementsByClassName("surveyForm");
+			for(let i=0; i<ele.length; i++)
+			{
+				ele[i]['value']='';
+			}
+	}
+	const mapJumpersinTable=(jumper)=>
+	{
+		let table= document.getElementById('jumper_table');
+		let tr= document.createElement('TR');
+		let keysArr=Object.keys(jumper);
+		table.appendChild(tr);
+		for(let i=0; i<keysArr.length-1; i++)
+		{
+			let td= document.createElement('TD');
+			let t= document.createTextNode(jumper[keysArr[i]]);
+			td.appendChild(t);
+			tr.appendChild(td);
+		}
+		toClipboardListeners(document.getElementsByTagName('td'));
+	}
+	const toClipboardListeners= (tdata) =>
+	{
+		Array.from(tdata,(ele)=> ele.addEventListener('click', ()=> {
+			const elem= document.createElement('textarea');
+			elem.value= ele.textContent;
+			document.body.appendChild(elem);
+			elem.select();
+			document.execCommand("copy");
+			document.body.removeChild(elem);
+		}));
+	}
+	return {
+		validateString: validateString,
+		jumperCreator: jumperCreator,
+		invalidDataEntry: invalidDataEntry,
+		getFormsValue: getFormsValue,
+		formsCleaner: formsCleaner,
+		mapJumpersinTable: mapJumpersinTable,
+		toClipboardListeners: toClipboardListeners
+	}
+}
+
+FunBun().getFormsValue();
+
+</script>
+</html>
